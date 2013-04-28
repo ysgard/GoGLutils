@@ -1,6 +1,6 @@
-// Matrix - A collection of simple routines and structures to help with matrices
-// as well functions for common math operations
-
+// A collection of simple routines and structures to help with matrices
+// as well functions for common math operations.
+//
 // I tried to keep the structure similar to glm's matrix and vector classes
 // Therefore, the matrices are stored in column order:
 //
@@ -9,21 +9,23 @@
 // y | { v0y } { v1y } { v2y } { v3y } |
 // z | { v0z } { v1z } { v2z } { v3z } |
 // w | { v0w } { v1w } { v2w } { v3w } |
-
+//
 // So if you were going to scale a matrix, you'd set:
 // mat[0].x = scaleX * mat[0].x
 // mat[1].y = scaleY * mat[1].y
 // mat[2].z = scaleZ * mat[2].z
-
+//
 // Must be careful - Can't have vector pointers inside the matrix, as
 // the value must be contiguous in memory if we're going to pass
 // them to OpenGL.
-
+//
 // This package also contains OpenGL-friendly math functions - these
 // are basically Go's math functions wrapped in pointer casts to make
 // them use gl.Float (glFloat)
-
-package go-glutils
+// 
+// There is also a simple matrix stack utility, as well as a functions
+// that loads and creates shaders from .vert and .grag GLSL files.
+package goglutils
 
 import (
 	"errors"
@@ -45,7 +47,7 @@ var debugOut = os.Stderr
 // *     VEC3 - A 3x1 vector     * //
 // ******************************* //
 
-// Struct that kinda, sorta represents a glm/glsl vector
+// Struct that kinda, sorta represents a vec3 glm/glsl vector
 type Vec3 struct {
 	x, y, z gl.Float
 }
@@ -68,7 +70,7 @@ func (u *Vec3) Cross(v *Vec3) *Vec3 {
 	return &s
 }
 
-// Add - Add together two Vec3's - u.Add(v)
+// Add together two Vec3's - u.Add(v)
 func (u *Vec3) Add(v *Vec3) *Vec3 {
 	s := Vec3{
 		u.x + v.x,
@@ -78,7 +80,7 @@ func (u *Vec3) Add(v *Vec3) *Vec3 {
 	return &s
 }
 
-// Sub - Subtract two Vec3's - u.Sub(v)
+// Subtract two Vec3's - u.Sub(v)
 func (u *Vec3) Sub(v *Vec3) *Vec3 {
 	s := Vec3{
 		u.x - v.x,
@@ -88,7 +90,7 @@ func (u *Vec3) Sub(v *Vec3) *Vec3 {
 	return &s
 }
 
-// Mul - Multiply vector by a scalar
+// Multiply vector by a scalar
 func (u *Vec3) MulS(f gl.Float) *Vec3 {
 	s := Vec3{
 		u.x * f,
@@ -102,6 +104,7 @@ func (u *Vec3) MulS(f gl.Float) *Vec3 {
 // *     VEC4 - A 4x1 vector     * //
 // ******************************* //
 
+// Struct that kinda, sorta represents a glm vec4
 type Vec4 struct {
 	x, y, z, w gl.Float
 }
@@ -129,10 +132,10 @@ func (v *Vec4) Normalize() {
 // *     MAT4 - A 4x4 Matrix     * //
 // ******************************* //
 
-// Struct that kinda, sorta represents a glm/glsl matrix
+// Struct that kinda, sorta represents a glm/glsl 4x4 matrix
 type Mat4 [4]Vec4
 
-// MulV - multiply receiving matrix by given Vec4 and return
+// Multiply receiving matrix by given Vec4 and return
 // the new Vec4
 func (m *Mat4) MulV(v *Vec4) *Vec4 {
 	rv := Vec4{0.0, 0.0, 0.0, 0.0}
@@ -143,7 +146,7 @@ func (m *Mat4) MulV(v *Vec4) *Vec4 {
 	return &rv
 }
 
-// MulM - multiply receiving matrix by given Mat4 and return
+// Multiply receiving matrix by given Mat4 and return
 // the new Mat.
 func (m1 *Mat4) MulM(m2 *Mat4) *Mat4 {
 	var rm = Mat4{
@@ -196,7 +199,7 @@ func (m *Mat4) Scale(s *Vec4) *Mat4 {
 	return m.MulM(scaleMat)
 }
 
-// MulS - Multiplies a Matrix by a scalar s and returns the new matrix
+// Multiplies a Matrix by a scalar s and returns the new matrix
 func (m *Mat4) MulS(s gl.Float) *Mat4 {
 	var rm = Mat4{
 		{m[0].x * s, m[0].y * s, m[0].z * s, m[0].w * s},
@@ -207,7 +210,7 @@ func (m *Mat4) MulS(s gl.Float) *Mat4 {
 	return &rm
 }
 
-// Translate - take a translation vector {tx, ty, tz, 1.0} and
+// Take a translation vector {tx, ty, tz, 1.0} and
 // translate the matrix
 func (m *Mat4) Translate(offset *Vec4) *Mat4 {
 	var tm = IdentMat4()
@@ -246,7 +249,7 @@ func FromArray(arr []gl.Float) (*Mat4, error) {
 	return rm, nil
 }
 
-// IdentMat4 - return a Mat4 with identity values
+// Return a Mat4 with identity values
 func IdentMat4() *Mat4 {
 	var m Mat4
 	m[0].x = 1.0
@@ -256,7 +259,7 @@ func IdentMat4() *Mat4 {
 	return &m
 }
 
-// Copy - create a copy of a given mat4
+// Create a copy of a given mat4
 func (m *Mat4) Copy() *Mat4 {
 	copy := IdentMat4()
 	for i := 0; i < 4; i++ {
@@ -268,7 +271,7 @@ func (m *Mat4) Copy() *Mat4 {
 	return copy
 }
 
-// RotateX - returns a Mat4 representing a rotation matrix
+// Returns a Mat4 representing a rotation matrix
 // for the angle given in degrees
 func RotateX(fAngDeg gl.Float) *Mat4 {
 	fAngRad := DegToRad(fAngDeg)
@@ -282,7 +285,7 @@ func RotateX(fAngDeg gl.Float) *Mat4 {
 	return theMat
 }
 
-// RotateY - returns a Mat4 representing a rotation matrix
+// Returns a Mat4 representing a rotation matrix
 // for the angle given in degree
 func RotateY(fAngDeg gl.Float) *Mat4 {
 	fAngRad := DegToRad(fAngDeg)
@@ -296,7 +299,7 @@ func RotateY(fAngDeg gl.Float) *Mat4 {
 	return theMat
 }
 
-// RotateZ - returns a Mat4 representing a rotation matrix
+// Returns a Mat4 representing a rotation matrix
 // for the angle given in degrees
 func RotateZ(fAngDeg gl.Float) *Mat4 {
 	fAngRad := DegToRad(fAngDeg)
@@ -310,6 +313,7 @@ func RotateZ(fAngDeg gl.Float) *Mat4 {
 	return theMat
 }
 
+// Pretty-prints a Mat4 with an optional header
 func (m *Mat4) Print(s string) {
 	if s == "" {
 		s = "Debugging Matrix"
@@ -334,7 +338,7 @@ func (m *Mat4) Print(s string) {
 	//fmt.Fprintf(debugOut, "\t------------------------------------------------------------\n")
 }
 
-// Inverse - returns a new Mat4 representing the inverse of the Mat4
+// Returns a new Mat4 representing the inverse of the Mat4
 func (m *Mat4) Inverse() *Mat4 {
 	// Convert Mat4 to an array of floats
 	inArray := m.ToArray()
@@ -351,27 +355,27 @@ func (m *Mat4) Inverse() *Mat4 {
 // *     OpenGL utility functions     * //
 // ************************************ //
 
-// ModGL - Take two gl.Floats and return remainder as a gl.Float
+// Take two gl.Floats and return remainder as a gl.Float
 func ModGL(a, b gl.Float) gl.Float {
 	return (gl.Float)(math.Mod((float64)(a), (float64)(b)))
 }
 
-// LerpGL - Basic linear interpolation
+// Basic linear interpolation
 func LerpGL(start, end, ratio gl.Float) gl.Float {
 	return start + (end-start)*ratio
 }
 
-// CosGL - Cosine, in gl.Float
+// Cosine, in gl.Float
 func CosGL(Rad gl.Float) gl.Float {
 	return (gl.Float)(math.Cos((float64)(Rad)))
 }
 
-// SinGL - Sine, in gl.Float
+// Sine, in gl.Float
 func SinGL(Rad gl.Float) gl.Float {
 	return (gl.Float)(math.Sin((float64)(Rad)))
 }
 
-// TanGL - Tan, in gl.Float
+// Tan, in gl.Float
 func TanGL(Rad gl.Float) gl.Float {
 	return (gl.Float)(math.Tan((float64)(Rad)))
 }
@@ -386,7 +390,7 @@ func Ident4() []gl.Float {
 	}
 }
 
-// DegToRad - convert degrees to radians
+// Convert degrees to radians
 func DegToRad(fAngDeg gl.Float) gl.Float {
 	return fAngDeg * degToRad
 }
@@ -403,7 +407,7 @@ func Clamp(fValue, fMinValue, fMaxValue gl.Float) gl.Float {
 	}
 }
 
-// DebugMat - Pretty-print a []gl.Float slice representing
+// Pretty-print a []gl.Float slice representing
 // a 16-item transformation matrix.
 func DebugMat(m []gl.Float, s string) {
 	fmt.Fprintf(debugOut, "\t-----------------------%s-------------------------\n", s)

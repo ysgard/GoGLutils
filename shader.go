@@ -1,6 +1,6 @@
 /* Loads fragment and vertex shader code from the supplied files. */
 
-package go-glutils
+package goglutils
 
 import (
 	"bufio"

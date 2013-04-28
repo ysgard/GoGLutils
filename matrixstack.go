@@ -1,5 +1,4 @@
-// Matrix stack struct and supporting functions
-package go-glutils
+package goglutils
 
 import (
 	gl "github.com/chsc/gogl/gl33"
@@ -22,30 +21,37 @@ func (ms *MatrixStack) Top() *Mat4 {
 	return ms.currMat
 }
 
+// X-rotates the topmost matrix on the stack
 func (ms *MatrixStack) RotateX(deg gl.Float) {
 	ms.currMat = ms.currMat.MulM(RotateX(deg))
 }
 
+// Y-rotates the topmost matrix on the stack
 func (ms *MatrixStack) RotateY(deg gl.Float) {
 	ms.currMat = ms.currMat.MulM(RotateY(deg))
 }
 
+// Z-rotates the topmost matrix on the stack
 func (ms *MatrixStack) RotateZ(deg gl.Float) {
 	ms.currMat = ms.currMat.MulM(RotateZ(deg))
 }
 
+// Scales the topmost matrix on the stack
 func (ms *MatrixStack) Scale(s *Vec4) {
 	ms.currMat = ms.currMat.Scale(s)
 }
 
+// Translates the topmost matrix on the stack
 func (ms *MatrixStack) Translate(offset *Vec4) {
 	ms.currMat = ms.currMat.Translate(offset)
 }
 
+// Inverts the topmost matrix on the stack
 func (ms *MatrixStack) Invert() {
 	ms.currMat = ms.currMat.Inverse()
 }
 
+// Multiplies by another mat4 the topmost matrix on the stack
 func (ms *MatrixStack) MulM(m *Mat4) {
 	ms.currMat = ms.currMat.MulM(m)
 }
