@@ -111,7 +111,7 @@ type Vec4 struct {
 
 // Vec4 from a Vec3
 func (v3 *Vec3) V3to4(f gl.Float) *Vec4 {
-	v4 = Vec4{
+	v4 := Vec4{
 		v3.x,
 		v3.y,
 		v3.z,
