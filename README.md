@@ -10,7 +10,31 @@ Provides a matrix stack to provide the ability to pop/push 4x4 gl.float matrices
 
 ## shader.go ##
 
-Provides a simple function to load .vert and .frag shaders and return a shader program id.PACKAGE DOCUMENTATION
+Provides a simple function to load .vert and .frag shaders and return a shader program id.
+
+## mesh.go ***INCOMPLETE*** ##
+
+Provides a simple Mesh struct that keeps track of its vertex arrays and can be loaded via COLLADA (.dae), Object (.obj) and
+GLUT mesh (.xml) files. 
+
+## collada.go ## 
+
+Parses a Collada file and provides the raw data in a COLLADA
+struct.
+
+## objectloader.go ***INCOMPLETE*** ##
+
+Parses a .obj file and returns the raw data in an OBJECT struct.
+
+## glutmesh.go ***INCOMPLETE*** ##
+
+Reads a GLUT-style XML mesh file and returns a GLUTMESH struct.
+
+
+
+
+
+PACKAGE DOCUMENTATION ***INCOMPLETE***
 
 Go doc documentation below:
 
