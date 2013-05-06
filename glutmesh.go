@@ -26,7 +26,7 @@ func (m *RawMesh) Debug() {
 	}
 }
 
-type Attribute struct {
+type RawAttribute struct {
 	XMLName xml.Name `xml:"attribute"`
 	Index   string   `xml:"index,attr"`
 	Type    string   `xml:"type,attr"`
@@ -34,21 +34,21 @@ type Attribute struct {
 	CDATA   string   `xml:",chardata"`
 }
 
-func (a *Attribute) Debug() {
+func (a *RawAttribute) Debug() {
 	fmt.Fprintf(os.Stdout, "Attribute/Index -- %s\n", a.Index)
 	fmt.Fprintf(os.Stdout, "Attribute/Type -- %s\n", a.Type)
 	fmt.Fprintf(os.Stdout, "Attribute/Size -- %s\n", a.Size)
 	fmt.Fprintf(os.Stdout, "Attribute/CDATA -- %s\n", a.CDATA)
 }
 
-type Indices struct {
+type RawIndices struct {
 	XMLName xml.Name `xml:"indices"`
 	Cmd     string   `xml:"cmd,attr"`
 	Type    string   `xml:"type,attr"`
 	CDATA   string   `xml:",chardata"`
 }
 
-func (i *Indices) Debug() {
+func (i *RawIndices) Debug() {
 	fmt.Fprintf(os.Stdout, "Indices/Cmd -- %s\n", i.Cmd)
 	fmt.Fprintf(os.Stdout, "Indices/Type -- %s\n", i.Type)
 	fmt.Fprintf(os.Stdout, "Indices/CDATA -- %s\n", i.CDATA)
