@@ -8,14 +8,17 @@ package goglutils
 import (
 	//"encoding/xml"
 	//"fmt"
+	"errors"
 	gl "github.com/chsc/gogl/gl33"
 	//"os"
 )
 
 type Mesh struct {
-	name       string
-	attributes []*MeshAttribute
-	indices    []*MeshIndex
+	name string
+	//attributes []*MeshAttribute
+	attributes map[string]*MeshAttribute
+	//indices    []*MeshIndex
+	indices map[string]*MeshIndex
 }
 
 type MeshAttribute struct {
@@ -53,5 +56,27 @@ func NewMeshAttribute(data []gl.Float, stride int) *MeshAttribute {
 func NewMesh(name string) *Mesh {
 	m := new(Mesh)
 	m.name = name
+	m.attributes = map[string]*MeshAttribute{}
+	m.indices = map[string]*MeshIndex{}
 	return m
+}
+
+// Add an attribute array to a mesh
+func (m *Mesh) AddMeshAttribute(name string, data []gl.Float, stride int) error {
+	ma := NewMeshAttribute(data, stride)
+	if ma == nil {
+		return errors.New("Mesh:AddMeshAttribute:Could not allocate new attribute array")
+	}
+	m.attributes[name] = ma
+	return nil
+}
+
+// Add an index to the mesh
+func (m *Mesh) AddMeshIndex(name string, data []gl.Uint, primitive gl.Enum) error {
+	mi := NewMeshIndex(name, data, primitive)
+	if mi == nil {
+		return errors.New("Mesh:AddMeshIndex:Could not allocate new index array")
+	}
+	m.indices[name] = mi
+	return nil
 }

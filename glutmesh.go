@@ -54,7 +54,7 @@ func (i *RawIndices) Debug() {
 	fmt.Fprintf(os.Stdout, "Indices/CDATA -- %s\n", i.CDATA)
 }
 
-func LoadMesh(filename string) *RawMesh {
+func LoadGLUTMesh(filename string) *RawMesh, error {
 	file, err := os.Open(filename)
 	fi, err := file.Stat()
 	filelen := fi.Size()
@@ -72,7 +72,7 @@ func LoadMesh(filename string) *RawMesh {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, err.Error())
 	}
-	return m
+	return m, err
 }
 
 // func main() {
