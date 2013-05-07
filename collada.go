@@ -12,7 +12,7 @@
 //
 // Based on Collada format 1.4.1, should work with 1.5.
 
-package main
+package goglutils
 
 import (
 	"encoding/xml"
@@ -22,53 +22,53 @@ import (
 
 type Collada struct {
 	//Id                    string `xml:"attr"`
-	Version               string              `xml:"version,attr"`
-	Library_Geometries    LibraryGeometries   `xml:"library_geometries"`
-	Library_Visual_Scenes LibraryVisualScenes `xml:"library_visual_scenes"`
+	Version               string                     `xml:"version,attr"`
+	Library_Geometries    ColladaLibraryGeometries   `xml:"library_geometries"`
+	Library_Visual_Scenes ColladaLibraryVisualScenes `xml:"library_visual_scenes"`
 }
 
-type LibraryGeometries struct {
-	XMLName  xml.Name   `xml:"library_geometries"`
-	Geometry []Geometry `xml:"geometry"`
+type ColladaLibraryGeometries struct {
+	XMLName  xml.Name          `xml:"library_geometries"`
+	Geometry []ColladaGeometry `xml:"geometry"`
 }
 
-type Geometry struct {
-	XMLName xml.Name `xml:"geometry"`
-	Id      string   `xml:"id,attr"`
-	Mesh    Mesh     `xml:"mesh"`
+type ColladaGeometry struct {
+	XMLName xml.Name    `xml:"geometry"`
+	Id      string      `xml:"id,attr"`
+	Mesh    ColladaMesh `xml:"mesh"`
 }
 
-type Mesh struct {
-	XMLName  xml.Name `xml:"mesh"`
-	Source   []Source `xml:"source"`
-	Polylist Polylist
+type ColladaMesh struct {
+	XMLName  xml.Name        `xml:"mesh"`
+	Source   []ColladaSource `xml:"source"`
+	Polylist ColladaPolylist
 }
 
-type Source struct {
-	XMLName     xml.Name   `xml:"source"`
-	Id          string     `xml:"id,attr"`
-	Float_array FloatArray `xml:"float_array"`
+type ColladaSource struct {
+	XMLName     xml.Name          `xml:"source"`
+	Id          string            `xml:"id,attr"`
+	Float_array ColladaFloatArray `xml:"float_array"`
 }
 
-type Input struct {
+type ColladaInput struct {
 	XMLName  xml.Name `xml:"input"`
 	Semantic string   `xml:"semantic,attr"`
 	Source   string   `xml:"source,attr"`
 	Offset   string   `xml:"offset,attr"`
 }
 
-type FloatArray struct {
+type ColladaFloatArray struct {
 	XMLName xml.Name `xml:"float_array"`
 	Id      string   `xml:"id,attr"`
 	CDATA   string   `xml:",chardata"`
 	Count   string   `xml:"count,attr"`
 }
 
-type Polylist struct {
-	XMLName xml.Name `xml:"polylist"`
-	Id      string   `xml:"id,attr"`
-	Count   string   `xml:"count,attr"`
-	Input   []Input  `xml:"input"`
+type ColladaPolylist struct {
+	XMLName xml.Name       `xml:"polylist"`
+	Id      string         `xml:"id,attr"`
+	Count   string         `xml:"count,attr"`
+	Input   []ColladaInput `xml:"input"`
 
 	// List of integers, each specifying the number of vertices for one polygon
 	VCount string `xml:"vcount"`
@@ -77,12 +77,12 @@ type Polylist struct {
 	P string `xml:"p"`
 }
 
-type LibraryVisualScenes struct {
-	XMLName     xml.Name    `xml:"library_visual_scenes"`
-	VisualScene VisualScene `xml:"visual_scene"`
+type ColladaLibraryVisualScenes struct {
+	XMLName     xml.Name           `xml:"library_visual_scenes"`
+	VisualScene ColladaVisualScene `xml:"visual_scene"`
 }
 
-type VisualScene struct {
+type ColladaVisualScene struct {
 	XMLName xml.Name `xml:"visual_scene"`
 }
 
@@ -94,7 +94,7 @@ func (c *Collada) Debug() {
 	c.Library_Geometries.Debug()
 }
 
-func (l *LibraryGeometries) Debug() {
+func (l *ColladaLibraryGeometries) Debug() {
 	fmt.Fprintf(os.Stdout, "*** Library Geometry ***\n")
 	fmt.Fprintf(os.Stdout, "* Number of Geometries: %d\n", len(l.Geometry))
 	for _, g := range l.Geometry {
@@ -102,13 +102,13 @@ func (l *LibraryGeometries) Debug() {
 	}
 }
 
-func (g *Geometry) Debug() {
+func (g *ColladaGeometry) Debug() {
 	fmt.Fprintf(os.Stdout, "*** Geometry ***\n")
 	fmt.Fprintf(os.Stdout, "* ID: %s\n", g.Id)
 	g.Mesh.Debug()
 }
 
-func (m *Mesh) Debug() {
+func (m *ColladaMesh) Debug() {
 	fmt.Fprintf(os.Stdout, "*** Mesh ***\n")
 	fmt.Fprintf(os.Stdout, "* Number of Sources: %d\n", len(m.Source))
 	for _, s := range m.Source {
@@ -117,20 +117,20 @@ func (m *Mesh) Debug() {
 	m.Polylist.Debug()
 }
 
-func (s *Source) Debug() {
+func (s *ColladaSource) Debug() {
 	fmt.Fprintf(os.Stdout, "*** Source ***\n")
 	fmt.Fprintf(os.Stdout, "* ID: %s\n", s.Id)
 	s.Float_array.Debug()
 }
 
-func (f *FloatArray) Debug() {
+func (f *ColladaFloatArray) Debug() {
 	fmt.Fprintf(os.Stdout, "*** FloatArray ***\n")
 	fmt.Fprintf(os.Stdout, "* Id: %s\n", f.Id)
 	fmt.Fprintf(os.Stdout, "* CDATA: %s\n", f.CDATA)
 	fmt.Fprintf(os.Stdout, "* Count: %s\n", f.Count)
 }
 
-func (p *Polylist) Debug() {
+func (p *ColladaPolylist) Debug() {
 	fmt.Fprintf(os.Stdout, "*** Polylist ***\n")
 	fmt.Fprintf(os.Stdout, "* ID: %s\n", p.Id)
 	fmt.Fprintf(os.Stdout, "* Count: %s\n", p.Count)
@@ -141,7 +141,7 @@ func (p *Polylist) Debug() {
 	}
 }
 
-func (i *Input) Debug() {
+func (i *ColladaInput) Debug() {
 	fmt.Fprintf(os.Stdout, "*** Input ***\n")
 	fmt.Fprintf(os.Stdout, "* Semantic: %s\n", i.Semantic)
 	fmt.Fprintf(os.Stdout, "* Source: %s\n", i.Source)

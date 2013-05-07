@@ -60,8 +60,8 @@ func (ms *MatrixStack) Ortho(left, right, bottom, top, nearVal, farVal gl.Float)
 	ms.currMat = ms.currMat.MulM(Ortho(left, right, bottom, top, nearVal, farVal))
 }
 
-func (ms *MatrixStack) Perspective(fov, aspect, zNear, zFar) {
-	ms.currMat = ms.currMat.Mulm(Perspective(fov, aspect, zNear, zFar))
+func (ms *MatrixStack) Perspective(fov, aspect, zNear, zFar gl.Float) {
+	ms.currMat = ms.currMat.MulM(Perspective(fov, aspect, zNear, zFar))
 }
 
 // Create a copy of the current matrix and push

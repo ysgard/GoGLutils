@@ -87,7 +87,7 @@ func CreateShaderProgram(shaderFiles []string) gl.Uint {
 	// Create the Program object
 	var ProgramID gl.Uint = gl.CreateProgram()
 
-	// For each attached shader, figure out its extension, and load a shader of 
+	// For each attached shader, figure out its extension, and load a shader of
 	// that type.
 	var sid gl.Uint = 0
 	for _, shader := range shaderFiles {

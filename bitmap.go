@@ -1,8 +1,8 @@
-/* 
+/*
 Package bitmap implements a simple type to load, hold and manipulate bitmaps.
 
 */
-package main
+package goglutils
 
 import (
 	"encoding/binary"
@@ -19,7 +19,7 @@ type Bitmap struct {
 	data          []byte
 }
 
-// NewBitmap takes a filename and returns a bitmap object that holds the 
+// NewBitmap takes a filename and returns a bitmap object that holds the
 // data in that file.  If it cannot load the bitmap for whatever reason,
 // the Bitmap pointer will be nil.
 func NewBitmap(path string) (*Bitmap, error) {

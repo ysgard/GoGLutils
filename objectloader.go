@@ -1,7 +1,7 @@
 /*
 ObjectLoader - load .obj models for use by OpenGL
 */
-package main
+package goglutils
 
 import (
 	"bufio"

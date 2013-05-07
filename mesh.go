@@ -3,32 +3,30 @@
 //
 //
 
-
-
 package goglutils
 
 import (
-	"encoding/xml"
-	"fmt"
+	//"encoding/xml"
+	//"fmt"
 	gl "github.com/chsc/gogl/gl33"
-	"os"
+	//"os"
 )
 
 type Mesh struct {
-	name string
-	attributes []*Attribute
-	indices []*Index
+	name       string
+	attributes []*MeshAttribute
+	indices    []*MeshIndex
 }
 
 type MeshAttribute struct {
-	name string
-	data []gl.Float
+	name   string
+	data   []gl.Float
 	stride int
 }
 
 type MeshIndex struct {
-	name string
-	data []gl.Uint
+	name      string
+	data      []gl.Uint
 	primitive gl.Enum
 }
 
@@ -57,5 +55,3 @@ func NewMesh(name string) *Mesh {
 	m.name = name
 	return m
 }
-
-func AddAttribute

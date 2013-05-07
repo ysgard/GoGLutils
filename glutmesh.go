@@ -1,6 +1,6 @@
 // mesh - a struct representing a mesh
 
-package main
+package goglutils
 
 import (
 	"encoding/xml"
@@ -10,10 +10,10 @@ import (
 )
 
 type RawMesh struct {
-	XMLName   xml.Name    `xml:"mesh"`
-	Namespace string      `xml:"xmlns,attr"`
-	Attribute []Attribute `xml:"attribute"`
-	Indices   []Indices   `xml:"indices"`
+	XMLName   xml.Name       `xml:"mesh"`
+	Namespace string         `xml:"xmlns,attr"`
+	Attribute []RawAttribute `xml:"attribute"`
+	Indices   []RawIndices   `xml:"indices"`
 }
 
 func (m *RawMesh) Debug() {
