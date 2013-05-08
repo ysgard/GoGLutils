@@ -7,10 +7,12 @@ package goglutils
 
 import (
 	//"encoding/xml"
-	//"fmt"
+	"fmt"
 	"errors"
 	gl "github.com/chsc/gogl/gl33"
-	//"os"
+	"os"
+	"strings"
+	"strconv"
 )
 
 type Mesh struct {
@@ -79,4 +81,55 @@ func (m *Mesh) AddMeshIndex(name string, data []gl.Uint, primitive gl.Enum) erro
 	}
 	m.indices[name] = mi
 	return nil
+}
+
+// Helper function, splits a string of floats - like 
+// "23.3 0.0 2323.0" to a []gl.Float
+func StringToGLFloatArray(data string) ([]gl.Float, error) {
+	fields := strings.Fields(data)
+	if len(fields) == 0 {
+		return nil, errors.New("No data to convert")
+	}
+	returnArray := make([]gl.Float, len(fields))
+	for i, val := range fields {
+		floatVal, err := strconv.ParseFloat(val, 32)
+		if err == nil {
+			returnArray[i] = gl.Float(floatVal)
+		}
+	} 
+	return returnArray, nil
+}
+
+// Helper function - takes a string of unsigned ints, like
+// "23 2 1 3 53 3" and converts them into a []gl.Uint
+func StringToGLUintArray(data string) ([]gl.Uint, error) {
+	fields := strings.Fields(data)
+	if len(fields) == 0 {
+		return nil, errors.New("Mesh:StringToGLUintArray:no data to convert")
+	}
+	returnArray := make([]gl.Uint, len(fields))
+	for i, val := range fields {
+		intVal, err := strconv.ParseUint(val, 10, 32)
+		if err == nil {
+			returnArray[i] = gl.Uint(intVal)
+		} else {
+			returnArray[i] = 0
+		}
+	}
+	return returnArray, nil
+}
+
+
+
+// Load a mesh from a GLUT mesh file (.xml file)
+func (m *Mesh) LoadGLUTMesh(file string) {
+	raw, err := LoadGLUTMesh(file)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Cannot load GLUT mesh: %s\n", err)
+	} else {
+		for i, attr := range raw.Attribute {
+			m.AddMeshAttribute(attr.Index, attr.CDATA, attr.)
+		}
+	}
+
 }
