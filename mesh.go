@@ -7,12 +7,12 @@ package goglutils
 
 import (
 	//"encoding/xml"
-	"fmt"
 	"errors"
+	"fmt"
 	gl "github.com/chsc/gogl/gl33"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 type Mesh struct {
@@ -35,8 +35,48 @@ type MeshIndex struct {
 	primitive gl.Enum
 }
 
+func (mi *MeshIndex) Debug() {
+	fmt.Fprintf(os.Stdout, "*** MeshIndex ***\n")
+	fmt.Fprintf(os.Stdout, "* name: %s\n", mi.name)
+	fmt.Fprintf(os.Stdout, "* data: ")
+	for _, val := range mi.data {
+		fmt.Fprintf(os.Stdout, " %d ", val)
+	}
+	fmt.Fprintf(os.Stdout, "\n* primitive: ")
+	switch mi.primitive {
+	case gl.TRIANGLES:
+		fmt.Fprintf(os.Stdout, "%s\n", "triangles")
+	case gl.TRIANGLE_FAN:
+		fmt.Fprintf(os.Stdout, "%s\n", "triangle_fan")
+	case gl.TRIANGLE_STRIP:
+		fmt.Fprintf(os.Stdout, "%s\n", "triangle_strip")
+	case gl.POINTS:
+		fmt.Fprintf(os.Stdout, "%s\n", "points")
+	case gl.LINES:
+		fmt.Fprintf(os.Stdout, "%s\n", "lines")
+	case gl.LINE_LOOP:
+		fmt.Fprintf(os.Stdout, "%s\n", "line_loop")
+	case gl.LINE_STRIP:
+		fmt.Fprintf(os.Stdout, "%s\n", "line_strip")
+	default:
+		fmt.Fprintf(os.Stdout, "%s\n", "Could not determine primitive!")
+	}
+}
+
+func (ma *MeshAttribute) Debug() {
+	fmt.Fprintf(os.Stdout, "*** MeshAttribute ***\n")
+	fmt.Fprintf(os.Stdout, "* name: %s\n", ma.name)
+	fmt.Fprintf(os.Stdout, "* data: ")
+	for _, val := range ma.data {
+		fmt.Fprintf(os.Stdout, " %f ", val)
+	}
+	fmt.Fprintf(os.Stdout, "\n* stride: %d\n", ma.stride)
+}
+
 func NewMeshIndex(name string, data []gl.Uint, primitive gl.Enum) *MeshIndex {
 	i := new(MeshIndex)
+	i.name = name
+	i.data = make([]gl.Uint, len(data))
 	copied := copy(i.data, data)
 	if copied != len(data) {
 		return nil
@@ -45,8 +85,10 @@ func NewMeshIndex(name string, data []gl.Uint, primitive gl.Enum) *MeshIndex {
 	return i
 }
 
-func NewMeshAttribute(data []gl.Float, stride int) *MeshAttribute {
+func NewMeshAttribute(name string, data []gl.Float, stride int) *MeshAttribute {
 	a := new(MeshAttribute)
+	a.name = name
+	a.data = make([]gl.Float, len(data))
 	copied := copy(a.data, data)
 	if copied != len(data) {
 		return nil
@@ -65,7 +107,7 @@ func NewMesh(name string) *Mesh {
 
 // Add an attribute array to a mesh
 func (m *Mesh) AddMeshAttribute(name string, data []gl.Float, stride int) error {
-	ma := NewMeshAttribute(data, stride)
+	ma := NewMeshAttribute(name, data, stride)
 	if ma == nil {
 		return errors.New("Mesh:AddMeshAttribute:Could not allocate new attribute array")
 	}
@@ -83,7 +125,7 @@ func (m *Mesh) AddMeshIndex(name string, data []gl.Uint, primitive gl.Enum) erro
 	return nil
 }
 
-// Helper function, splits a string of floats - like 
+// Helper function, splits a string of floats - like
 // "23.3 0.0 2323.0" to a []gl.Float
 func StringToGLFloatArray(data string) ([]gl.Float, error) {
 	fields := strings.Fields(data)
@@ -96,7 +138,7 @@ func StringToGLFloatArray(data string) ([]gl.Float, error) {
 		if err == nil {
 			returnArray[i] = gl.Float(floatVal)
 		}
-	} 
+	}
 	return returnArray, nil
 }
 
@@ -105,7 +147,7 @@ func StringToGLFloatArray(data string) ([]gl.Float, error) {
 func StringToGLUintArray(data string) ([]gl.Uint, error) {
 	fields := strings.Fields(data)
 	if len(fields) == 0 {
-		return nil, errors.New("Mesh:StringToGLUintArray:no data to convert")
+		return nil, errors.New("Mesh:StringToGLUintArray:no data to convert\n")
 	}
 	returnArray := make([]gl.Uint, len(fields))
 	for i, val := range fields {
@@ -119,17 +161,67 @@ func StringToGLUintArray(data string) ([]gl.Uint, error) {
 	return returnArray, nil
 }
 
-
-
 // Load a mesh from a GLUT mesh file (.xml file)
-func (m *Mesh) LoadGLUTMesh(file string) {
+func (m *Mesh) LoadGLUTMesh(file string) error {
 	raw, err := LoadGLUTMesh(file)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Cannot load GLUT mesh: %s\n", err)
-	} else {
-		for i, attr := range raw.Attribute {
-			m.AddMeshAttribute(attr.Index, attr.CDATA, attr.)
+		return err
+	}
+	for _, attr := range raw.Attribute {
+		float_array, err := StringToGLFloatArray(attr.CDATA)
+		if err != nil {
+			return err
+		}
+		size, err := strconv.ParseInt(attr.Size, 10, 32)
+		if err != nil {
+			return err
+		}
+		err = m.AddMeshAttribute(attr.Index, float_array, int(size))
+		if err != nil {
+			return err
 		}
 	}
+	for i, indx := range raw.Indices {
+		var primitive gl.Enum
+		switch indx.Cmd {
+		case "triangles":
+			primitive = gl.TRIANGLES
+		case "tri-fan":
+			primitive = gl.TRIANGLE_FAN
+		case "tri-strip":
+			primitive = gl.TRIANGLE_STRIP
+		case "points":
+			primitive = gl.POINTS
+		case "lines":
+			primitive = gl.LINES
+		case "line-strip":
+			primitive = gl.LINE_STRIP
+		case "line-loop":
+			primitive = gl.LINE_LOOP
+		default:
+			continue
+		}
+		uint_array, err := StringToGLUintArray(indx.CDATA)
+		if err != nil {
+			return err
+		}
+		err = m.AddMeshIndex(strconv.FormatInt(int64(i), 10), uint_array, primitive)
+		if err != nil {
+			return err
+		}
 
+	}
+	return nil
+}
+
+func (m *Mesh) Debug() {
+	fmt.Fprintf(os.Stdout, "*** Debug Mesh: %s ***\n", m.name)
+	for key, val := range m.attributes {
+		fmt.Fprintf(os.Stdout, "* Attribute array: %s\n", key)
+		val.Debug()
+	}
+	for key, val := range m.indices {
+		fmt.Fprintf(os.Stdout, "* Index array: %s\n", key)
+		val.Debug()
+	}
 }
