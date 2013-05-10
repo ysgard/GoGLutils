@@ -13,31 +13,35 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"unsafe"
 )
 
 type Mesh struct {
 	name string
 	//attributes []*MeshAttribute
-	attributes map[string]*MeshAttribute
+	attributes []*MeshAttribute
 	//indices    []*MeshIndex
-	indices map[string]*MeshIndex
+	indices  []*MeshIndex
+	glvao    gl.Uint
+	glbuffer gl.Uint
 }
 
 type MeshAttribute struct {
-	name   string
+	desc   string
 	data   []gl.Float
 	stride int
 }
 
 type MeshIndex struct {
-	name      string
+	desc      string
 	data      []gl.Uint
 	primitive gl.Enum
+	ref       *MeshAttribute
 }
 
 func (mi *MeshIndex) Debug() {
 	fmt.Fprintf(os.Stdout, "*** MeshIndex ***\n")
-	fmt.Fprintf(os.Stdout, "* name: %s\n", mi.name)
+	fmt.Fprintf(os.Stdout, "* desc: %s\n", mi.desc)
 	fmt.Fprintf(os.Stdout, "* data: ")
 	for _, val := range mi.data {
 		fmt.Fprintf(os.Stdout, " %d ", val)
@@ -59,13 +63,14 @@ func (mi *MeshIndex) Debug() {
 	case gl.LINE_STRIP:
 		fmt.Fprintf(os.Stdout, "%s\n", "line_strip")
 	default:
-		fmt.Fprintf(os.Stdout, "%s\n", "Could not determine primitive!")
+		fmt.Fprintf(os.Stdout, "%s\n", "Could not determine primitive!\n")
 	}
+	fmt.Fprintf(os.Stdout, "* ref: %p\n", mi.ref)
 }
 
 func (ma *MeshAttribute) Debug() {
 	fmt.Fprintf(os.Stdout, "*** MeshAttribute ***\n")
-	fmt.Fprintf(os.Stdout, "* name: %s\n", ma.name)
+	fmt.Fprintf(os.Stdout, "* desc: %s\n", ma.desc)
 	fmt.Fprintf(os.Stdout, "* data: ")
 	for _, val := range ma.data {
 		fmt.Fprintf(os.Stdout, " %f ", val)
@@ -73,21 +78,22 @@ func (ma *MeshAttribute) Debug() {
 	fmt.Fprintf(os.Stdout, "\n* stride: %d\n", ma.stride)
 }
 
-func NewMeshIndex(name string, data []gl.Uint, primitive gl.Enum) *MeshIndex {
+func NewMeshIndex(desc string, data []gl.Uint, primitive gl.Enum, ref *MeshAttribute) *MeshIndex {
 	i := new(MeshIndex)
-	i.name = name
+	i.desc = desc
 	i.data = make([]gl.Uint, len(data))
 	copied := copy(i.data, data)
 	if copied != len(data) {
 		return nil
 	}
 	i.primitive = primitive
+	i.ref = ref
 	return i
 }
 
-func NewMeshAttribute(name string, data []gl.Float, stride int) *MeshAttribute {
+func NewMeshAttribute(desc string, data []gl.Float, stride int) *MeshAttribute {
 	a := new(MeshAttribute)
-	a.name = name
+	a.desc = desc
 	a.data = make([]gl.Float, len(data))
 	copied := copy(a.data, data)
 	if copied != len(data) {
@@ -100,29 +106,56 @@ func NewMeshAttribute(name string, data []gl.Float, stride int) *MeshAttribute {
 func NewMesh(name string) *Mesh {
 	m := new(Mesh)
 	m.name = name
-	m.attributes = map[string]*MeshAttribute{}
-	m.indices = map[string]*MeshIndex{}
+	m.attributes = []*MeshAttribute{}
+	m.indices = []*MeshIndex{}
+	m.glvao = 0
+	m.glbuffer = 0
 	return m
 }
 
 // Add an attribute array to a mesh
-func (m *Mesh) AddMeshAttribute(name string, data []gl.Float, stride int) error {
-	ma := NewMeshAttribute(name, data, stride)
+func (m *Mesh) AddMeshAttribute(desc string, data []gl.Float, stride int) error {
+	ma := NewMeshAttribute(desc, data, stride)
 	if ma == nil {
-		return errors.New("Mesh:AddMeshAttribute:Could not allocate new attribute array")
+		return errors.New("Mesh:AddMeshAttribute: Could not allocate new attribute array\n")
 	}
-	m.attributes[name] = ma
+	m.attributes = append(m.attributes, ma)
 	return nil
 }
 
 // Add an index to the mesh
-func (m *Mesh) AddMeshIndex(name string, data []gl.Uint, primitive gl.Enum) error {
-	mi := NewMeshIndex(name, data, primitive)
+func (m *Mesh) AddMeshIndex(desc string, data []gl.Uint, primitive gl.Enum, ref *MeshAttribute) error {
+	mi := NewMeshIndex(desc, data, primitive, ref)
 	if mi == nil {
-		return errors.New("Mesh:AddMeshIndex:Could not allocate new index array")
+		return errors.New("Mesh:AddMeshIndex: Could not allocate new index array\n")
 	}
-	m.indices[name] = mi
+	m.indices = append(m.indices, mi)
 	return nil
+}
+
+// Set the attribute array this index points to
+func (mi *MeshIndex) SetAttribute(ref *MeshAttribute) {
+	mi.ref = ref
+}
+
+// Set the attribute array a particular index points to
+func (m *Mesh) SetAttributeReference(index int, ref *MeshAttribute) {
+	m.indices[index].SetAttribute(ref)
+}
+
+// Set the primitive type this index draws
+func (mi *MeshIndex) SetPrimitive(primitive gl.Enum) {
+	mi.primitive = primitive
+}
+
+// Set the primitive type for a specific index
+func (m *Mesh) SetPrimitive(index int, primitive gl.Enum) {
+	m.indices[index].SetPrimitive(primitive)
+}
+
+// Get a specific Attribute
+func (m *Mesh) Attribute(index int) *MeshAttribute {
+	return m.attributes[index]
 }
 
 // Helper function, splits a string of floats - like
@@ -130,7 +163,7 @@ func (m *Mesh) AddMeshIndex(name string, data []gl.Uint, primitive gl.Enum) erro
 func StringToGLFloatArray(data string) ([]gl.Float, error) {
 	fields := strings.Fields(data)
 	if len(fields) == 0 {
-		return nil, errors.New("No data to convert")
+		return nil, errors.New("Mesh:StringToGLFloatArray: No data to convert\n")
 	}
 	returnArray := make([]gl.Float, len(fields))
 	for i, val := range fields {
@@ -147,7 +180,7 @@ func StringToGLFloatArray(data string) ([]gl.Float, error) {
 func StringToGLUintArray(data string) ([]gl.Uint, error) {
 	fields := strings.Fields(data)
 	if len(fields) == 0 {
-		return nil, errors.New("Mesh:StringToGLUintArray:no data to convert\n")
+		return nil, errors.New("Mesh:StringToGLUintArray: No data to convert\n")
 	}
 	returnArray := make([]gl.Uint, len(fields))
 	for i, val := range fields {
@@ -181,6 +214,12 @@ func (m *Mesh) LoadGLUTMesh(file string) error {
 			return err
 		}
 	}
+	if len(m.attributes) == 0 {
+		return errors.New("Mesh:LoadGLUTMesh: Could not load GLUT mesh, no attribute arrays")
+	}
+
+	// GLUT meshes don't single out a particular attribute array for their indexes (annoyingly),
+	// so we assume the first one.  Can always reset an index reference later if needed.
 	for i, indx := range raw.Indices {
 		var primitive gl.Enum
 		switch indx.Cmd {
@@ -205,7 +244,7 @@ func (m *Mesh) LoadGLUTMesh(file string) error {
 		if err != nil {
 			return err
 		}
-		err = m.AddMeshIndex(strconv.FormatInt(int64(i), 10), uint_array, primitive)
+		err = m.AddMeshIndex(strconv.FormatInt(int64(i), 10), uint_array, primitive, m.attributes[0])
 		if err != nil {
 			return err
 		}
@@ -216,12 +255,66 @@ func (m *Mesh) LoadGLUTMesh(file string) error {
 
 func (m *Mesh) Debug() {
 	fmt.Fprintf(os.Stdout, "*** Debug Mesh: %s ***\n", m.name)
-	for key, val := range m.attributes {
-		fmt.Fprintf(os.Stdout, "* Attribute array: %s\n", key)
+	for _, val := range m.attributes {
 		val.Debug()
 	}
-	for key, val := range m.indices {
-		fmt.Fprintf(os.Stdout, "* Index array: %s\n", key)
+	for _, val := range m.indices {
 		val.Debug()
 	}
+}
+
+// Set the Mesh's render context
+func (m *Mesh) SetRenderContext(vao, buf gl.Uint) {
+	m.glvao = vao
+	m.glbuffer = buf
+}
+
+// Render the mesh using the provided context.
+func (m *Mesh) Render() error {
+	// If we don't have a valid context, we return an error.
+	if m.glvao == 0 || m.glbuffer == 0 {
+		return errors.New(fmt.Sprintf("Mesh:Render: Mesh context invalid: vao=%d, buffer=%d", m.glvao, m.glbuffer))
+	}
+	if gl.IsBuffer(m.glbuffer) == gl.FALSE {
+		return errors.New("Mesh:Render: Invalid OpenGL buffer!")
+	}
+	if gl.IsVertexArray(m.glvao) == gl.FALSE {
+		return errors.New("Mesh:Render: Invalid OpenGL VAO!")
+	}
+	// If we don't have any indices, we don't have anything to do, return
+	if len(m.indices) == 0 {
+		return nil
+	}
+
+	// Bind the VAO
+	gl.BindVertexArray(m.glvao)
+	// Bind the buffer
+	gl.BindBuffer(gl.ARRAY_BUFFER, m.glbuffer)
+	// Buffer the vertex positions
+	gl.BufferData(gl.ARRAY_BUFFER,
+		gl.Sizeiptr(unsafe.Sizeof(m.attributes[0].data)),
+		gl.Pointer(&m.attributes[0].data[0]),
+		gl.STATIC_DRAW)
+
+	// For each index, draw that part of the mesh
+	for _, indx := range m.indices {
+		gl.DrawElements(indx.primitive,
+			gl.Sizei(len(indx.data)),
+			gl.UNSIGNED_INT,
+			gl.Pointer(&indx.data[0]))
+	}
+	// Unbind the VAO
+	gl.BindVertexArray(0)
+	return nil
+}
+
+// Helper function, specify a VAO/Buffer when rendering
+func (m *Mesh) RenderVB(v, b gl.Uint) error {
+	// Save the current vao, buffer
+	tmpvao := m.glvao
+	tmpbuf := m.glbuffer
+	m.SetRenderContext(v, b)
+	err := m.Render()
+	m.SetRenderContext(tmpvao, tmpbuf)
+	return err
 }
