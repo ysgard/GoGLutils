@@ -271,6 +271,12 @@ func (m *Mesh) SetRenderContext(vao, buf gl.Uint) {
 
 // Render the mesh using the provided context.
 func (m *Mesh) Render() error {
+
+	// Bind the VAO
+	gl.BindVertexArray(m.glvao)
+	// Bind the buffer
+	gl.BindBuffer(gl.ARRAY_BUFFER, m.glbuffer)
+
 	// If we don't have a valid context, we return an error.
 	if m.glvao == 0 || m.glbuffer == 0 {
 		return errors.New(fmt.Sprintf("Mesh:Render: Mesh context invalid: vao=%d, buffer=%d", m.glvao, m.glbuffer))
@@ -286,22 +292,19 @@ func (m *Mesh) Render() error {
 		return nil
 	}
 
-	// Bind the VAO
-	gl.BindVertexArray(m.glvao)
-	// Bind the buffer
-	gl.BindBuffer(gl.ARRAY_BUFFER, m.glbuffer)
 	// Buffer the vertex positions
+	bufferLen := unsafe.Sizeof(gl.Float(0)) * (uintptr)(len(m.attributes[0].data))
 	gl.BufferData(gl.ARRAY_BUFFER,
-		gl.Sizeiptr(unsafe.Sizeof(m.attributes[0].data)),
+		gl.Sizeiptr(bufferLen),
 		gl.Pointer(&m.attributes[0].data[0]),
 		gl.STATIC_DRAW)
+	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 
 	// For each index, draw that part of the mesh
 	for _, indx := range m.indices {
 		gl.DrawElements(indx.primitive,
 			gl.Sizei(len(indx.data)),
-			gl.UNSIGNED_INT,
-			gl.Pointer(&indx.data[0]))
+			gl.UNSIGNED_INT, nil)
 	}
 	// Unbind the VAO
 	gl.BindVertexArray(0)
