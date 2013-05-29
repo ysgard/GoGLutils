@@ -11,9 +11,9 @@
 // w | { v0w } { v1w } { v2w } { v3w } |
 //
 // So if you were going to scale a matrix, you'd set:
-// mat[0].x = scaleX * mat[0].x
-// mat[1].y = scaleY * mat[1].y
-// mat[2].z = scaleZ * mat[2].z
+// mat[0].X = scaleX * mat[0].X
+// mat[1].Y = scaleY * mat[1].Y
+// mat[2].Z = scaleZ * mat[2].Z
 //
 // Must be careful - Can't have vector pointers inside the matrix, as
 // the value must be contiguous in memory if we're going to pass
@@ -49,23 +49,27 @@ var debugOut = os.Stderr
 
 // Struct that kinda, sorta represents a vec3 glm/glsl vector
 type Vec3 struct {
-	x, y, z gl.Float
+	X, Y, Z gl.Float
+}
+
+func NewVec3(x, y, z gl.Float) *Vec3 {
+	return &Vec3{x, y, z}
 }
 
 // Normalize - Vec3 version
 func (v *Vec3) Normalize() {
-	lenv := (gl.Float)(math.Sqrt((float64)(v.x*v.x + v.y*v.y + v.z*v.z)))
-	v.x = v.x / lenv
-	v.y = v.y / lenv
-	v.z = v.z / lenv
+	lenv := (gl.Float)(math.Sqrt((float64)(v.X*v.X + v.Y*v.Y + v.Z*v.Z)))
+	v.X = v.X / lenv
+	v.Y = v.Y / lenv
+	v.Z = v.Z / lenv
 }
 
 // Cross product - Vec3 version, u.Cross(v) = u x v
 func (u *Vec3) Cross(v *Vec3) *Vec3 {
 	s := Vec3{
-		u.y*v.z - u.z*v.y,
-		u.z*v.x - u.x*v.z,
-		u.x*v.y - u.y*v.x,
+		u.Y*v.Z - u.Z*v.Y,
+		u.Z*v.X - u.X*v.Z,
+		u.X*v.Y - u.Y*v.X,
 	}
 	return &s
 }
@@ -73,9 +77,9 @@ func (u *Vec3) Cross(v *Vec3) *Vec3 {
 // Add together two Vec3's - u.Add(v)
 func (u *Vec3) Add(v *Vec3) *Vec3 {
 	s := Vec3{
-		u.x + v.x,
-		u.y + v.y,
-		u.z + v.z,
+		u.X + v.X,
+		u.Y + v.Y,
+		u.Z + v.Z,
 	}
 	return &s
 }
@@ -83,9 +87,9 @@ func (u *Vec3) Add(v *Vec3) *Vec3 {
 // Subtract two Vec3's - u.Sub(v)
 func (u *Vec3) Sub(v *Vec3) *Vec3 {
 	s := Vec3{
-		u.x - v.x,
-		u.y - v.y,
-		u.z - v.z,
+		u.X - v.X,
+		u.Y - v.Y,
+		u.Z - v.Z,
 	}
 	return &s
 }
@@ -93,9 +97,9 @@ func (u *Vec3) Sub(v *Vec3) *Vec3 {
 // Multiply vector by a scalar
 func (u *Vec3) MulS(f gl.Float) *Vec3 {
 	s := Vec3{
-		u.x * f,
-		u.y * f,
-		u.z * f,
+		u.X * f,
+		u.Y * f,
+		u.Z * f,
 	}
 	return &s
 }
@@ -106,26 +110,35 @@ func (u *Vec3) MulS(f gl.Float) *Vec3 {
 
 // Struct that kinda, sorta represents a glm vec4
 type Vec4 struct {
-	x, y, z, w gl.Float
+	X, Y, Z, W gl.Float
+}
+
+func NewVec4(x, y, z, w gl.Float) *Vec4 {
+	return &Vec4{x, y, z, w}
 }
 
 // Vec4 from a Vec3
-func (v3 *Vec3) V3to4(f gl.Float) *Vec4 {
+func (v3 *Vec3) To4W(f gl.Float) *Vec4 {
 	v4 := Vec4{
-		v3.x,
-		v3.y,
-		v3.z,
+		v3.X,
+		v3.Y,
+		v3.Z,
 		f,
 	}
 	return &v4
 }
 
+// Implicit Vec4 from a Vec3, assumes 1.0 for w
+func (v3 *Vec3) To4() *Vec4 {
+	return v3.To4W(1.0)
+}
+
 // Normalize - normalizes a vector, doesn't include w
 func (v *Vec4) Normalize() {
-	lenv := (gl.Float)(math.Sqrt((float64)(v.x*v.x + v.y*v.y + v.z*v.z)))
-	v.x = v.x / lenv
-	v.y = v.y / lenv
-	v.z = v.z / lenv
+	lenv := (gl.Float)(math.Sqrt((float64)(v.X*v.X + v.Y*v.Y + v.Z*v.Z)))
+	v.X = v.X / lenv
+	v.Y = v.Y / lenv
+	v.Z = v.Z / lenv
 }
 
 // ******************************* //
@@ -135,14 +148,19 @@ func (v *Vec4) Normalize() {
 // Struct that kinda, sorta represents a glm/glsl 4x4 matrix
 type Mat4 [4]Vec4
 
+// Return a Mat4 as a *gl.Float
+func (m *Mat4) GetPtr() *gl.Float {
+	return &m[0].X
+}
+
 // Multiply receiving matrix by given Vec4 and return
 // the new Vec4
 func (m *Mat4) MulV(v *Vec4) *Vec4 {
 	rv := Vec4{0.0, 0.0, 0.0, 0.0}
-	rv.x = m[0].x*v.x + m[1].x*v.y + m[2].x*v.z + m[3].x*v.w
-	rv.y = m[0].y*v.x + m[1].y*v.y + m[2].y*v.z + m[3].y*v.w
-	rv.z = m[0].z*v.x + m[1].z*v.y + m[2].z*v.z + m[3].z*v.w
-	rv.w = m[0].w*v.x + m[1].w*v.y + m[2].w*v.z + m[3].w*v.w
+	rv.X = m[0].X*v.X + m[1].X*v.Y + m[2].X*v.Z + m[3].X*v.W
+	rv.Y = m[0].Y*v.X + m[1].Y*v.Y + m[2].Y*v.Z + m[3].Y*v.W
+	rv.Z = m[0].Z*v.X + m[1].Z*v.Y + m[2].Z*v.Z + m[3].Z*v.W
+	rv.W = m[0].W*v.X + m[1].W*v.Y + m[2].W*v.Z + m[3].W*v.W
 	return &rv
 }
 
@@ -151,28 +169,28 @@ func (m *Mat4) MulV(v *Vec4) *Vec4 {
 func (m1 *Mat4) MulM(m2 *Mat4) *Mat4 {
 	var rm = Mat4{
 		{
-			m1[0].x*m2[0].x + m1[1].x*m2[0].y + m1[2].x*m2[0].z + m1[3].x*m2[0].w,
-			m1[0].y*m2[0].x + m1[1].y*m2[0].y + m1[2].y*m2[0].z + m1[3].y*m2[0].w,
-			m1[0].z*m2[0].x + m1[1].z*m2[0].y + m1[2].z*m2[0].z + m1[3].z*m2[0].w,
-			m1[0].w*m2[0].x + m1[1].w*m2[0].y + m1[2].w*m2[0].z + m1[3].w*m2[0].w,
+			m1[0].X*m2[0].X + m1[1].X*m2[0].Y + m1[2].X*m2[0].Z + m1[3].X*m2[0].W,
+			m1[0].Y*m2[0].X + m1[1].Y*m2[0].Y + m1[2].Y*m2[0].Z + m1[3].Y*m2[0].W,
+			m1[0].Z*m2[0].X + m1[1].Z*m2[0].Y + m1[2].Z*m2[0].Z + m1[3].Z*m2[0].W,
+			m1[0].W*m2[0].X + m1[1].W*m2[0].Y + m1[2].W*m2[0].Z + m1[3].W*m2[0].W,
 		},
 		{
-			m1[0].x*m2[1].x + m1[1].x*m2[1].y + m1[2].x*m2[1].z + m1[3].x*m2[1].w,
-			m1[0].y*m2[1].x + m1[1].y*m2[1].y + m1[2].y*m2[1].z + m1[3].y*m2[1].w,
-			m1[0].z*m2[1].x + m1[1].z*m2[1].y + m1[2].z*m2[1].z + m1[3].z*m2[1].w,
-			m1[0].w*m2[1].x + m1[1].w*m2[1].y + m1[2].w*m2[1].z + m1[3].w*m2[1].w,
+			m1[0].X*m2[1].X + m1[1].X*m2[1].Y + m1[2].X*m2[1].Z + m1[3].X*m2[1].W,
+			m1[0].Y*m2[1].X + m1[1].Y*m2[1].Y + m1[2].Y*m2[1].Z + m1[3].Y*m2[1].W,
+			m1[0].Z*m2[1].X + m1[1].Z*m2[1].Y + m1[2].Z*m2[1].Z + m1[3].Z*m2[1].W,
+			m1[0].W*m2[1].X + m1[1].W*m2[1].Y + m1[2].W*m2[1].Z + m1[3].W*m2[1].W,
 		},
 		{
-			m1[0].x*m2[2].x + m1[1].x*m2[2].y + m1[2].x*m2[2].z + m1[3].x*m2[2].w,
-			m1[0].y*m2[2].x + m1[1].y*m2[2].y + m1[2].y*m2[2].z + m1[3].y*m2[2].w,
-			m1[0].z*m2[2].x + m1[1].z*m2[2].y + m1[2].z*m2[2].z + m1[3].z*m2[2].w,
-			m1[0].w*m2[2].x + m1[1].w*m2[2].y + m1[2].w*m2[2].z + m1[3].w*m2[2].w,
+			m1[0].X*m2[2].X + m1[1].X*m2[2].Y + m1[2].X*m2[2].Z + m1[3].X*m2[2].W,
+			m1[0].Y*m2[2].X + m1[1].Y*m2[2].Y + m1[2].Y*m2[2].Z + m1[3].Y*m2[2].W,
+			m1[0].Z*m2[2].X + m1[1].Z*m2[2].Y + m1[2].Z*m2[2].Z + m1[3].Z*m2[2].W,
+			m1[0].W*m2[2].X + m1[1].W*m2[2].Y + m1[2].W*m2[2].Z + m1[3].W*m2[2].W,
 		},
 		{
-			m1[0].x*m2[3].x + m1[1].x*m2[3].y + m1[2].x*m2[3].z + m1[3].x*m2[3].w,
-			m1[0].y*m2[3].x + m1[1].y*m2[3].y + m1[2].y*m2[3].z + m1[3].y*m2[3].w,
-			m1[0].z*m2[3].x + m1[1].z*m2[3].y + m1[2].z*m2[3].z + m1[3].z*m2[3].w,
-			m1[0].w*m2[3].x + m1[1].w*m2[3].y + m1[2].w*m2[3].z + m1[3].w*m2[3].w,
+			m1[0].X*m2[3].X + m1[1].X*m2[3].Y + m1[2].X*m2[3].Z + m1[3].X*m2[3].W,
+			m1[0].Y*m2[3].X + m1[1].Y*m2[3].Y + m1[2].Y*m2[3].Z + m1[3].Y*m2[3].W,
+			m1[0].Z*m2[3].X + m1[1].Z*m2[3].Y + m1[2].Z*m2[3].Z + m1[3].Z*m2[3].W,
+			m1[0].W*m2[3].X + m1[1].W*m2[3].Y + m1[2].W*m2[3].Z + m1[3].W*m2[3].W,
 		},
 	}
 	return &rm
@@ -181,10 +199,10 @@ func (m1 *Mat4) MulM(m2 *Mat4) *Mat4 {
 // Returns the transpose of a given matrix
 func (m *Mat4) Transpose() *Mat4 {
 	var rm = Mat4{
-		{m[0].x, m[1].x, m[2].x, m[3].x},
-		{m[0].y, m[1].y, m[2].y, m[3].y},
-		{m[0].z, m[1].z, m[2].z, m[3].z},
-		{m[0].w, m[1].w, m[2].w, m[3].w},
+		{m[0].X, m[1].X, m[2].X, m[3].X},
+		{m[0].Y, m[1].Y, m[2].Y, m[3].Y},
+		{m[0].Z, m[1].Z, m[2].Z, m[3].Z},
+		{m[0].W, m[1].W, m[2].W, m[3].W},
 	}
 	return &rm
 }
@@ -193,19 +211,19 @@ func (m *Mat4) Transpose() *Mat4 {
 // form { sx, sy, sz, 1.0 }
 func (m *Mat4) Scale(s *Vec4) *Mat4 {
 	scaleMat := IdentMat4()
-	scaleMat[0].x = s.x
-	scaleMat[1].y = s.y
-	scaleMat[2].z = s.z
+	scaleMat[0].X = s.X
+	scaleMat[1].Y = s.Y
+	scaleMat[2].Z = s.Z
 	return m.MulM(scaleMat)
 }
 
 // Multiplies a Matrix by a scalar s and returns the new matrix
 func (m *Mat4) MulS(s gl.Float) *Mat4 {
 	var rm = Mat4{
-		{m[0].x * s, m[0].y * s, m[0].z * s, m[0].w * s},
-		{m[1].x * s, m[1].y * s, m[1].z * s, m[1].w * s},
-		{m[2].x * s, m[2].y * s, m[2].z * s, m[2].w * s},
-		{m[3].x * s, m[3].y * s, m[3].z * s, m[3].w * s},
+		{m[0].X * s, m[0].Y * s, m[0].Z * s, m[0].W * s},
+		{m[1].X * s, m[1].Y * s, m[1].Z * s, m[1].W * s},
+		{m[2].X * s, m[2].Y * s, m[2].Z * s, m[2].W * s},
+		{m[3].X * s, m[3].Y * s, m[3].Z * s, m[3].W * s},
 	}
 	return &rm
 }
@@ -214,9 +232,9 @@ func (m *Mat4) MulS(s gl.Float) *Mat4 {
 // translate the matrix
 func (m *Mat4) Translate(offset *Vec4) *Mat4 {
 	var tm = IdentMat4()
-	tm[3].x = offset.x
-	tm[3].y = offset.y
-	tm[3].z = offset.z
+	tm[3].X = offset.X
+	tm[3].Y = offset.Y
+	tm[3].Z = offset.Z
 	return m.MulM(tm)
 }
 
@@ -225,10 +243,10 @@ func (m *Mat4) Translate(offset *Vec4) *Mat4 {
 func (m *Mat4) ToArray() []gl.Float {
 	arr := make([]gl.Float, 16)
 	for i, vec := range m {
-		arr[i*4] = vec.x
-		arr[i*4+1] = vec.y
-		arr[i*4+2] = vec.z
-		arr[i*4+3] = vec.w
+		arr[i*4] = vec.X
+		arr[i*4+1] = vec.Y
+		arr[i*4+2] = vec.Z
+		arr[i*4+3] = vec.W
 	}
 	return arr
 }
@@ -241,10 +259,10 @@ func FromArray(arr []gl.Float) (*Mat4, error) {
 	}
 	rm := IdentMat4()
 	for i := 0; i < 4; i++ {
-		rm[i].x = arr[i*4]
-		rm[i].y = arr[i*4+1]
-		rm[i].z = arr[i*4+2]
-		rm[i].w = arr[i*4+3]
+		rm[i].X = arr[i*4]
+		rm[i].Y = arr[i*4+1]
+		rm[i].Z = arr[i*4+2]
+		rm[i].W = arr[i*4+3]
 	}
 	return rm, nil
 }
@@ -252,10 +270,10 @@ func FromArray(arr []gl.Float) (*Mat4, error) {
 // Return a Mat4 with identity values
 func IdentMat4() *Mat4 {
 	var m Mat4
-	m[0].x = 1.0
-	m[1].y = 1.0
-	m[2].z = 1.0
-	m[3].w = 1.0
+	m[0].X = 1.0
+	m[1].Y = 1.0
+	m[2].Z = 1.0
+	m[3].W = 1.0
 	return &m
 }
 
@@ -263,10 +281,10 @@ func IdentMat4() *Mat4 {
 func (m *Mat4) Copy() *Mat4 {
 	copy := IdentMat4()
 	for i := 0; i < 4; i++ {
-		copy[i].x = m[i].x
-		copy[i].y = m[i].y
-		copy[i].z = m[i].z
-		copy[i].w = m[i].w
+		copy[i].X = m[i].X
+		copy[i].Y = m[i].Y
+		copy[i].Z = m[i].Z
+		copy[i].W = m[i].W
 	}
 	return copy
 }
@@ -278,10 +296,10 @@ func RotateX(fAngDeg gl.Float) *Mat4 {
 	fCos := CosGL(fAngRad)
 	fSin := SinGL(fAngRad)
 	theMat := IdentMat4()
-	theMat[1].y = fCos
-	theMat[2].y = -fSin
-	theMat[1].z = fSin
-	theMat[2].z = fCos
+	theMat[1].Y = fCos
+	theMat[2].Y = -fSin
+	theMat[1].Z = fSin
+	theMat[2].Z = fCos
 	return theMat
 }
 
@@ -292,10 +310,10 @@ func RotateY(fAngDeg gl.Float) *Mat4 {
 	fCos := CosGL(fAngRad)
 	fSin := SinGL(fAngRad)
 	theMat := IdentMat4()
-	theMat[0].x = fCos
-	theMat[2].x = fSin
-	theMat[0].z = -fSin
-	theMat[2].z = fCos
+	theMat[0].X = fCos
+	theMat[2].X = fSin
+	theMat[0].Z = -fSin
+	theMat[2].Z = fCos
 	return theMat
 }
 
@@ -306,10 +324,10 @@ func RotateZ(fAngDeg gl.Float) *Mat4 {
 	fCos := CosGL(fAngRad)
 	fSin := SinGL(fAngRad)
 	theMat := IdentMat4()
-	theMat[0].x = fCos
-	theMat[1].x = -fSin
-	theMat[0].y = fSin
-	theMat[1].y = fCos
+	theMat[0].X = fCos
+	theMat[1].X = -fSin
+	theMat[0].Y = fSin
+	theMat[1].Y = fCos
 	return theMat
 }
 
@@ -331,10 +349,10 @@ func (m *Mat4) Print(s string) {
 			s + " " + strings.Repeat("-", (58-slen)/2-1)
 	}
 	fmt.Fprintf(debugOut, "%s\n", dashes)
-	fmt.Fprintf(debugOut, "%9.3f       %9.3f       %9.3f       %9.3f\n", m[0].x, m[1].x, m[2].x, m[3].x)
-	fmt.Fprintf(debugOut, "%9.3f       %9.3f       %9.3f       %9.3f\n", m[0].y, m[1].y, m[2].y, m[3].y)
-	fmt.Fprintf(debugOut, "%9.3f       %9.3f       %9.3f       %9.3f\n", m[0].z, m[1].z, m[2].z, m[3].z)
-	fmt.Fprintf(debugOut, "%9.3f       %9.3f       %9.3f       %9.3f\n\n", m[0].w, m[1].w, m[2].w, m[3].w)
+	fmt.Fprintf(debugOut, "%9.3f       %9.3f       %9.3f       %9.3f\n", m[0].X, m[1].X, m[2].X, m[3].X)
+	fmt.Fprintf(debugOut, "%9.3f       %9.3f       %9.3f       %9.3f\n", m[0].Y, m[1].Y, m[2].Y, m[3].Y)
+	fmt.Fprintf(debugOut, "%9.3f       %9.3f       %9.3f       %9.3f\n", m[0].Z, m[1].Z, m[2].Z, m[3].Z)
+	fmt.Fprintf(debugOut, "%9.3f       %9.3f       %9.3f       %9.3f\n\n", m[0].W, m[1].W, m[2].W, m[3].W)
 	//fmt.Fprintf(debugOut, "\t------------------------------------------------------------\n")
 }
 
@@ -354,12 +372,12 @@ func (m *Mat4) Inverse() *Mat4 {
 // Returns an orthographic projection matrix
 func Ortho(left, right, bottom, top, nearVal, farVal gl.Float) *Mat4 {
 	m := IdentMat4()
-	m[0].x = 2.0 / (right - left)
-	m[1].y = 2.0 / (top - bottom)
-	m[2].z = -2.0 / (farVal - nearVal)
-	m[3].x = -(right + left) / (right - left)
-	m[3].y = -(top + bottom) / (top - bottom)
-	m[3].z = -(farVal + nearVal) / (farVal - nearVal)
+	m[0].X = 2.0 / (right - left)
+	m[1].Y = 2.0 / (top - bottom)
+	m[2].Z = -2.0 / (farVal - nearVal)
+	m[3].X = -(right + left) / (right - left)
+	m[3].Y = -(top + bottom) / (top - bottom)
+	m[3].Z = -(farVal + nearVal) / (farVal - nearVal)
 	return m
 }
 
@@ -367,12 +385,35 @@ func Ortho(left, right, bottom, top, nearVal, farVal gl.Float) *Mat4 {
 func Perspective(fovy, aspect, zNear, zFar gl.Float) *Mat4 {
 	f := 1 / (TanGL(fovy / 2.0))
 	m := IdentMat4()
-	m[0].x = f / aspect
-	m[1].y = f
-	m[2].z = (zFar + zNear) / (zNear - zFar)
-	m[3].w = 0
-	m[2].w = -1
-	m[3].z = (2 * zFar * zNear) / (zNear - zFar)
+	m[0].X = f / aspect
+	m[1].Y = f
+	m[2].Z = (zFar + zNear) / (zNear - zFar)
+	m[3].W = 0
+	m[2].W = -1
+	m[3].Z = (2 * zFar * zNear) / (zNear - zFar)
+	return m
+}
+
+// Returns a frustum
+func Frustum(left, right, bottom, top, near, far gl.Float) *Mat4 {
+
+	m := IdentMat4()
+	if (right == left) || (top == bottom) || (near == far) || (near < 0.0) || (far < 0.0) {
+		fmt.Fprintf(os.Stderr, "Frustum error: Returning identity\n")
+		return m
+	}
+
+	m[0].X = (2.0 * near) / (right - left)
+	m[1].Y = (2.0 * near) / (top - bottom)
+
+	m[2].X = (right + left) / (right - left)
+	m[2].Y = (top + bottom) / (top - bottom)
+	m[2].Z = -(far + near) / (far - near)
+	m[2].W = -1.0
+
+	m[3].Z = -(2.0 * far * near) / (far - near)
+	m[2].W = 0.0
+
 	return m
 }
 
