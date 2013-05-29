@@ -22,8 +22,9 @@ type Mesh struct {
 	attributes []*MeshAttribute
 	//indices    []*MeshIndex
 	indices  []*MeshIndex
-	glvao    gl.Uint
-	glbuffer gl.Uint
+	vao		gl.Uint  // Vertex attribute array
+	vbo 	gl.Uint  // Vertex buffer
+	ebo		gl.Uint  // Element buffer
 }
 
 type MeshAttribute struct {
@@ -108,8 +109,9 @@ func NewMesh(name string) *Mesh {
 	m.name = name
 	m.attributes = []*MeshAttribute{}
 	m.indices = []*MeshIndex{}
-	m.glvao = 0
-	m.glbuffer = 0
+	m.vao = 0
+	m.vbo = 0
+	m.ebo = 0 
 	return m
 }
 
@@ -264,27 +266,28 @@ func (m *Mesh) Debug() {
 }
 
 // Set the Mesh's render context
-func (m *Mesh) SetRenderContext(vao, buf gl.Uint) {
-	m.glvao = vao
-	m.glbuffer = buf
+func (m *Mesh) SetRenderContext(vao, vbo, ebo gl.Uint) {
+	m.vao = vao
+	m.vbo = vbo
+	m.ebo = ebo
 }
 
 // Render the mesh using the provided context.
 func (m *Mesh) Render() error {
 
-	// Bind the VAO
-	gl.BindVertexArray(m.glvao)
-	// Bind the buffer
-	gl.BindBuffer(gl.ARRAY_BUFFER, m.glbuffer)
+	// Bind the VAO & Buffers
+	gl.BindVertexArray(m.vao)
+	gl.BindBuffer(gl.ARRAY_BUFFER, m.vbo)
+	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, m.ebo)
 
 	// If we don't have a valid context, we return an error.
-	if m.glvao == 0 || m.glbuffer == 0 {
-		return errors.New(fmt.Sprintf("Mesh:Render: Mesh context invalid: vao=%d, buffer=%d", m.glvao, m.glbuffer))
+	if m.vao == 0 || m.vbo == 0 || m.ebo == 0{
+		return errors.New(fmt.Sprintf("Mesh:Render: Mesh context invalid: vao=%d, buffer=%d, element buffer=%d\n", m.vao, m.vbo, m.ebo))
 	}
-	if gl.IsBuffer(m.glbuffer) == gl.FALSE {
+	if gl.IsBuffer(m.vbo) == gl.FALSE || gl.IsBuffer(m.ebo) == gl.FALSE {
 		return errors.New("Mesh:Render: Invalid OpenGL buffer!")
 	}
-	if gl.IsVertexArray(m.glvao) == gl.FALSE {
+	if gl.IsVertexArray(m.vao) == gl.FALSE {
 		return errors.New("Mesh:Render: Invalid OpenGL VAO!")
 	}
 	// If we don't have any indices, we don't have anything to do, return
@@ -300,24 +303,22 @@ func (m *Mesh) Render() error {
 		gl.STATIC_DRAW)
 	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 
-	// For each index, draw that part of the mesh
+	// For each index, buffer the indices and
+	// draw that part of the mesh
 	for _, indx := range m.indices {
+		bufferLen = unsafe.Sizeof(gl.Uint(0)) * (uintptr)(len(indx.data))
+		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER,
+			gl.Sizeiptr(bufferLen),
+			gl.Pointer(&indx.data[0]),
+			gl.STATIC_DRAW)
 		gl.DrawElements(indx.primitive,
 			gl.Sizei(len(indx.data)),
 			gl.UNSIGNED_INT, nil)
 	}
+	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
 	// Unbind the VAO
 	gl.BindVertexArray(0)
 	return nil
 }
 
-// Helper function, specify a VAO/Buffer when rendering
-func (m *Mesh) RenderVB(v, b gl.Uint) error {
-	// Save the current vao, buffer
-	tmpvao := m.glvao
-	tmpbuf := m.glbuffer
-	m.SetRenderContext(v, b)
-	err := m.Render()
-	m.SetRenderContext(tmpvao, tmpbuf)
-	return err
-}
+
