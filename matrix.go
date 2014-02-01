@@ -56,12 +56,16 @@ func NewVec3(x, y, z gl.Float) *Vec3 {
 	return &Vec3{x, y, z}
 }
 
+// Length - Vec3 version
+func (v *Vec3) Length() gl.Float {
+	return (gl.Float)(math.Sqrt((float64)(v.X*v.X + v.Y*v.Y + v.Z*v.Z)))
+}
+
+
 // Normalize - Vec3 version
-func (v *Vec3) Normalize() {
+func (v *Vec3) Normalize() *Vec3{
 	lenv := (gl.Float)(math.Sqrt((float64)(v.X*v.X + v.Y*v.Y + v.Z*v.Z)))
-	v.X = v.X / lenv
-	v.Y = v.Y / lenv
-	v.Z = v.Z / lenv
+	return &Vec3{ v.X / lenv, v.Y / lenv, v.Z / lenv }
 }
 
 // Cross product - Vec3 version, u.Cross(v) = u x v
@@ -134,11 +138,9 @@ func (v3 *Vec3) To4() *Vec4 {
 }
 
 // Normalize - normalizes a vector, doesn't include w
-func (v *Vec4) Normalize() {
+func (v *Vec4) Normalize() *Vec4{
 	lenv := (gl.Float)(math.Sqrt((float64)(v.X*v.X + v.Y*v.Y + v.Z*v.Z)))
-	v.X = v.X / lenv
-	v.Y = v.Y / lenv
-	v.Z = v.Z / lenv
+	return &Vec4{ v.X / lenv, v.Y / lenv, v.Z / lenv, v.W }
 }
 
 // ******************************* //
@@ -415,6 +417,29 @@ func Frustum(left, right, bottom, top, near, far gl.Float) *Mat4 {
 	m[2].W = 0.0
 
 	return m
+}
+
+// Takes three vectors:
+//  cameraLoc -> Point in space where the camera is located
+//  lookTo -> Point in space where the camera is looking at
+//  orientation -> (0, 1, 0) for right-side up, (0, -1, 0) for upside-down 
+func LookAt(cameraLoc, lookTo, orientation *Vec3) *Mat4 {
+
+	F := lookTo.Sub(cameraLoc)
+	f := F.Normalize()
+	o := orientation.Normalize()
+	s := f.Cross(o).Normalize()
+	u := s.Cross(f)
+	M := Mat4{
+		Vec4{ s.X, u.X, -f.X, 0.0 },
+		Vec4{ s.Y, u.Y, -f.Y, 0.0 },
+		Vec4{ s.Z, u.Z, -f.Z, 0.0 },
+		Vec4{ 0.0, 0.0, 0.0, 1.0, },
+	}
+	t := Vec4{-lookTo.X, -lookTo.Y, -lookTo.Z, 1.0}
+	MR := M.Translate(&t)
+
+	return MR
 }
 
 // ************************************ //
