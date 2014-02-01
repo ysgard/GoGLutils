@@ -423,7 +423,7 @@ func Frustum(left, right, bottom, top, near, far gl.Float) *Mat4 {
 //  cameraLoc -> Point in space where the camera is located
 //  lookTo -> Point in space where the camera is looking at
 //  orientation -> (0, 1, 0) for right-side up, (0, -1, 0) for upside-down 
-func LookAt(cameraLoc, lookTo, orientation *Vec3) *Mat4 {
+func LookAtV(cameraLoc, lookTo, orientation *Vec3) *Mat4 {
 
 	F := lookTo.Sub(cameraLoc)
 	f := F.Normalize()
@@ -440,6 +440,14 @@ func LookAt(cameraLoc, lookTo, orientation *Vec3) *Mat4 {
 	MR := M.Translate(&t)
 
 	return MR
+}
+
+// Simplified LookAt - doesn't take vectors, just coords
+func LookAt(cameraX, cameraY, cameraZ, eyeX, eyeY, eyeZ, orientX, orientY, orientZ gl.Float) *Mat4 {
+	camera := &Vec3{ cameraX, cameraY, cameraZ }
+	eye := &Vec3{ eyeX, eyeY, eyeZ }
+	orient := &Vec3{ orientX, orientY, orientZ }
+	return LookAtV(camera, eye, orient)
 }
 
 // ************************************ //

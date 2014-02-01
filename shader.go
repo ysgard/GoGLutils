@@ -128,9 +128,9 @@ func CreateShaderProgram(shaderFiles []string) gl.Uint {
 
 		default:
 			fmt.Fprintf(os.Stderr, "ERROR: Don't understand extension %s\n", extension)
-			fmt.Fprintf(os.Stderr, "Accepted extensions: .fragmentshader/.frag/.fragment for fragment shaders\n")
-			fmt.Fprintf(os.Stderr, ".vertexshader/.vert/.vertex for vertex shaders, and\n")
-			fmt.Fprintf(os.Stderr, ".geometryshader/.geom/.geometry for geometry shaders.\n")
+			fmt.Fprintf(os.Stderr, "Accepted extensions: .fragmentshader/.frag/.fragment/.fs for fragment shaders\n")
+			fmt.Fprintf(os.Stderr, ".vertexshader/.vert/.vertex/.vs for vertex shaders, and\n")
+			fmt.Fprintf(os.Stderr, ".geometryshader/.geom/.geometry/.gs for geometry shaders.\n")
 		}
 		if sid != 0 {
 			gl.AttachShader(ProgramID, sid)
