@@ -52,8 +52,14 @@ type Vec3 struct {
 	X, Y, Z gl.Float
 }
 
+// Bit useless, literal form is preferred usually
 func NewVec3(x, y, z gl.Float) *Vec3 {
 	return &Vec3{x, y, z}
+}
+
+// Create Vec3 from float64, which happens too often
+func NewVec3FromFloat64(x, y, z float64) *Vec3 {
+	return &Vec3{ gl.Float(x), gl.Float(y), gl.Float(z) }
 }
 
 // Length - Vec3 version
@@ -64,7 +70,7 @@ func (v *Vec3) Length() gl.Float {
 
 // Normalize - Vec3 version
 func (v *Vec3) Normalize() *Vec3{
-	lenv := (gl.Float)(math.Sqrt((float64)(v.X*v.X + v.Y*v.Y + v.Z*v.Z)))
+	lenv := v.Length()
 	return &Vec3{ v.X / lenv, v.Y / lenv, v.Z / lenv }
 }
 
@@ -108,9 +114,6 @@ func (u *Vec3) MulS(f gl.Float) *Vec3 {
 	return &s
 }
 
-// Pretty print a Vec3
-
-
 
 // ******************************* //
 // *     VEC4 - A 4x1 vector     * //
@@ -121,8 +124,14 @@ type Vec4 struct {
 	X, Y, Z, W gl.Float
 }
 
+// Bit useless, use literal form usually
 func NewVec4(x, y, z, w gl.Float) *Vec4 {
 	return &Vec4{x, y, z, w}
+}
+
+// Not so useless - create a Vec4 from a bunch of float64
+func NewVec4FromFloat64(x, y, z, w float64) *Vec4 {
+	return &Vec4{ gl.Float(x), gl.Float(y), gl.Float(z), gl.Float(w) }
 }
 
 // Vec4 from a Vec3
@@ -244,18 +253,7 @@ func (m *Mat4) Translate(offset *Vec4) *Mat4 {
 	return m.MulM(tm)
 }
 
-// ToArray - produce a []gl.Float array from a given struct.
-// Perhaps not necessary, doing &Mat4 should be sufficient!
-func (m *Mat4) ToArray() []gl.Float {
-	arr := make([]gl.Float, 16)
-	for i, vec := range m {
-		arr[i*4] = vec.X
-		arr[i*4+1] = vec.Y
-		arr[i*4+2] = vec.Z
-		arr[i*4+3] = vec.W
-	}
-	return arr
-}
+
 
 // FromArray - produce a Mat4 from a []gl.Float.  Basically
 // the inverse of ToArray
@@ -675,6 +673,19 @@ func DebugMat(m []gl.Float, s string) {
 		fmt.Fprintf(debugOut, "\t%f\t%f\t%f\t%f\n", m[i*4], m[i*4+1], m[i*4+2], m[i*4+3])
 	}
 	
+}
+
+// ToArray - produce a []gl.Float array from a given struct.
+// Perhaps not necessary, doing &Mat4 should be sufficient!
+func (m *Mat4) ToArray() []gl.Float {
+	arr := make([]gl.Float, 16)
+	for i, vec := range m {
+		arr[i*4] = vec.X
+		arr[i*4+1] = vec.Y
+		arr[i*4+2] = vec.Z
+		arr[i*4+3] = vec.W
+	}
+	return arr
 }
 
 
