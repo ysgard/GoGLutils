@@ -108,6 +108,10 @@ func (u *Vec3) MulS(f gl.Float) *Vec3 {
 	return &s
 }
 
+// Pretty print a Vec3
+
+
+
 // ******************************* //
 // *     VEC4 - A 4x1 vector     * //
 // ******************************* //
@@ -333,31 +337,6 @@ func RotateZ(fAngDeg gl.Float) *Mat4 {
 	return theMat
 }
 
-// Pretty-prints a Mat4 with an optional header
-func (m *Mat4) Print(s string) {
-	if s == "" {
-		s = "Debugging Matrix"
-	}
-	slen := len(s) + 2
-
-	var dashes string
-	if (58-slen)&1 == 1 {
-		// odd-string
-		dashes = strings.Repeat("-", (58-slen-1)/2) + " " +
-			s + " " + strings.Repeat("-", ((58-slen-1)/2))
-	} else {
-		// even-string
-		dashes = strings.Repeat("-", (58-slen)/2) + " " +
-			s + " " + strings.Repeat("-", (58-slen)/2-1)
-	}
-	fmt.Fprintf(debugOut, "%s\n", dashes)
-	fmt.Fprintf(debugOut, "%9.3f       %9.3f       %9.3f       %9.3f\n", m[0].X, m[1].X, m[2].X, m[3].X)
-	fmt.Fprintf(debugOut, "%9.3f       %9.3f       %9.3f       %9.3f\n", m[0].Y, m[1].Y, m[2].Y, m[3].Y)
-	fmt.Fprintf(debugOut, "%9.3f       %9.3f       %9.3f       %9.3f\n", m[0].Z, m[1].Z, m[2].Z, m[3].Z)
-	fmt.Fprintf(debugOut, "%9.3f       %9.3f       %9.3f       %9.3f\n\n", m[0].W, m[1].W, m[2].W, m[3].W)
-	//fmt.Fprintf(debugOut, "\t------------------------------------------------------------\n")
-}
-
 // Returns a new Mat4 representing the inverse of the Mat4
 func (m *Mat4) Inverse() *Mat4 {
 	// Convert Mat4 to an array of floats
@@ -506,16 +485,6 @@ func Clamp(fValue, fMinValue, fMaxValue gl.Float) gl.Float {
 	}
 }
 
-// Pretty-print a []gl.Float slice representing
-// a 16-item transformation matrix.
-func DebugMat(m []gl.Float, s string) {
-	fmt.Fprintf(debugOut, "\t-----------------------%s-------------------------\n", s)
-	for i := 0; i < 4; i++ {
-		fmt.Fprintf(debugOut, "\t%f\t%f\t%f\t%f\n", m[i*4], m[i*4+1], m[i*4+2], m[i*4+3])
-	}
-	fmt.Fprintf(debugOut, "\t--------------------------------------------------------\n")
-}
-
 // Code from the MESA library, adapted for Go
 func Invert(m []gl.Float) ([]gl.Float, error) {
 
@@ -652,4 +621,80 @@ func Invert(m []gl.Float) ([]gl.Float, error) {
 	}
 
 	return invOut, nil
+}
+
+// *************************************** //
+// *     Debugging utility functions     * //
+// *************************************** //
+
+// Pretty-prints a Vec3 with an optional header
+func (v *Vec3) Print(s string) {
+	if s == "" {
+		s = "Debugging Vec3"
+	}
+	dashes := GetDashedHeader(s)
+	fmt.Fprintf(debugOut, "%s\n", dashes)
+	fmt.Fprintf(debugOut, "%9.3f       %9.3f       %9.3f\n", v.X, v.Y, v.Z)
+}
+
+// Pretty-prints a Vec4 with an optional header
+func (v *Vec4) Print(s string) {
+	if s == "" {
+		s = "Debugging Vec4"
+	}
+	dashes := GetDashedHeader(s)
+	fmt.Fprintf(debugOut, "%s\n", dashes)
+	fmt.Fprintf(debugOut, "%9.3f       %9.3f       %9.3f       %9.3f\n", v.X, v.Y, v.Z, v.W)
+}
+
+
+
+// Pretty-prints a Mat4 with an optional header
+func (m *Mat4) Print(s string) {
+	if s == "" {
+		s = "Debugging Matrix"
+	}
+	dashes := GetDashedHeader(s)
+	fmt.Fprintf(debugOut, "%s\n", dashes)
+	fmt.Fprintf(debugOut, "%9.3f       %9.3f       %9.3f       %9.3f\n", m[0].X, m[1].X, m[2].X, m[3].X)
+	fmt.Fprintf(debugOut, "%9.3f       %9.3f       %9.3f       %9.3f\n", m[0].Y, m[1].Y, m[2].Y, m[3].Y)
+	fmt.Fprintf(debugOut, "%9.3f       %9.3f       %9.3f       %9.3f\n", m[0].Z, m[1].Z, m[2].Z, m[3].Z)
+	fmt.Fprintf(debugOut, "%9.3f       %9.3f       %9.3f       %9.3f\n\n", m[0].W, m[1].W, m[2].W, m[3].W)
+	//fmt.Fprintf(debugOut, "\t------------------------------------------------------------\n")
+}
+
+// Pretty-print a []gl.Float slice representing
+// a 16-item transformation matrix.
+func DebugMat(m []gl.Float, s string) {
+	if s == "" {
+		s = "Debugging a []gl.Float"
+	}
+	dashes := GetDashedHeader(s)
+	fmt.Fprintf(debugOut, "%s\n", dashes)
+	for i := 0; i < 4; i++ {
+		fmt.Fprintf(debugOut, "\t%f\t%f\t%f\t%f\n", m[i*4], m[i*4+1], m[i*4+2], m[i*4+3])
+	}
+	
+}
+
+
+// ************************************* //
+// *     private utility functions     * //
+// ************************************* //
+
+// Get a dashed header for pretty-printing
+func GetDashedHeader(s string) string {
+	slen := len(s) + 2
+
+	var dashes string
+	if (58-slen)&1 == 1 {
+		// odd-string
+		dashes = strings.Repeat("-", (58-slen-1)/2) + " " +
+			s + " " + strings.Repeat("-", ((58-slen-1)/2))
+	} else {
+		// even-string
+		dashes = strings.Repeat("-", (58-slen)/2) + " " +
+			s + " " + strings.Repeat("-", (58-slen)/2-1)
+	}
+	return dashes
 }
