@@ -1,4 +1,15 @@
-# Simple utilities for use with Go-GL #
+# GoGLutils
+---
+Simple utilities for use with chsc's excellent  [http://github.com/chsc/gogl](*gogl library*).
+
+*This is still a work in progress!  There are still several bugs to work out.*
+
+## Installation
+
+  go get github.com/Ysgard/goglutils
+
+As of right now, it only works if you have gl33 installed.  I'm working on
+letting it use any version of GoGL.
 
 ## matrix.go ##
 
